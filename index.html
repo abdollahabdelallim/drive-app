@@ -2,65 +2,64 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
 <title>Eisenhower Matrix</title>
 <style>
-* { box-sizing: border-box; font-family: Arial, sans-serif; }
-body { margin: 0; padding: 20px; background: #f5f5f5; }
-.header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-h1 { margin: 0; flex: 1; }
-.add-btn { padding: 10px 14px; border: none; border-radius: 8px; background: #1976d2; color: white; cursor: pointer; font-size: 14px; }
-.add-btn.secondary { background: #6a1b9a; }
-.matrix { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15px; height: 80vh; }
-.quadrant { background: #ffffff; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; }
-.quadrant h2 { margin: 0 0 10px; font-size: 18px; }
-.group-container { border: 1px solid #ccc; border-radius: 10px; margin-bottom: 10px; background: #fafafa; padding: 5px; cursor: grab; }
-.group-container.dragging { opacity: 0.5; }
-.group-header { font-weight: bold; padding: 6px 10px; border-radius: 8px; color: white; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; cursor: grab; }
-.group-header-left { display: flex; align-items: center; gap: 8px; }
-.group-menu { position: relative; }
-.group-dots { cursor: pointer; padding: 0 5px; font-weight: bold; color: white; opacity: 0.8; }
-.group-dots:hover { opacity: 1; }
-.group-menu-content { display: none; position: absolute; right: 0; top: 18px; background: white; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); overflow: hidden; z-index: 20; color: #333; }
-.group-menu-content div { padding: 6px 10px; cursor: pointer; white-space: nowrap; }
-.group-menu-content div:hover { background: #eee; }
-.group-tasks { padding-left: 15px; display: flex; flex-direction: column; gap: 6px; }
-.task { display: flex; align-items: center; justify-content: space-between; background: #f1f1f1; padding: 8px 10px; border-radius: 6px; font-size: 14px; cursor: grab; }
-.task.dragging { opacity: 0.5; }
-.task-left { display: flex; align-items: center; gap: 6px; }
-.group-dot { width: 10px; height: 10px; border-radius: 50%; }
-.task-menu { position: relative; }
-.dots { cursor: pointer; padding: 0 5px; font-weight: bold; }
-.menu { display: none; position: absolute; right: 0; top: 18px; background: white; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); overflow: hidden; z-index: 10; }
-.menu div { padding: 6px 10px; cursor: pointer; white-space: nowrap; }
-.menu div:hover { background: #eee; }
-.q1 { border-left: 6px solid #e53935; }
-.q2 { border-left: 6px solid #43a047; }
-.q3 { border-left: 6px solid #fb8c00; }
-.q4 { border-left: 6px solid #757575; }
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; }
-.modal-content { background: white; padding: 20px; border-radius: 12px; width: 320px; max-width: 90%; }
-label { display: block; margin: 8px 0; font-size: 14px; }
-.modal-actions { margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px; }
-.delete-group-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
-.delete-group-btn { padding: 8px; border: none; border-radius: 6px; background: #d32f2f; color: white; cursor: pointer; font-size: 14px; }
-.delete-group-btn:hover { background: #b71c1c; }
-.clear-data-btn { padding: 8px 12px; border: 1px solid #d32f2f; border-radius: 6px; background: white; color: #d32f2f; cursor: pointer; font-size: 12px; }
-.clear-data-btn:hover { background: #ffebee; }
-.sync-container { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-.sync-status { padding: 4px 8px; border-radius: 4px; font-size: 12px; background: #f0f0f0; color: #666; }
-.sync-status.syncing { background: #fff3cd; color: #856404; }
-.sync-status.online { background: #d4edda; color: #155724; }
-.sync-status.offline { background: #f8d7da; color: #721c24; }
-.google-drive-btn { padding: 8px 12px; border: none; border-radius: 6px; background: #4285F4; color: white; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 5px; }
-.google-drive-btn:hover { background: #3367D6; }
-.google-drive-btn.signed-in { background: #34A853; }
-.user-info { display: flex; align-items: center; gap: 8px; margin-left: 10px; }
-.user-avatar { width: 24px; height: 24px; border-radius: 50%; }
-.sync-options { display: none; position: absolute; top: 100%; right: 0; background: white; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); padding: 10px; z-index: 100; margin-top: 5px; min-width: 150px; }
-.sync-options.show { display: block; }
-.sync-options button { display: block; width: 100%; padding: 6px 10px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer; text-align: left; }
-.sync-options button:hover { background: #f5f5f5; }
-.sync-options hr { margin: 8px 0; border: none; border-top: 1px solid #eee; }
+/* EXISTING STYLES (keep all your current styles) */
+
+/* ADD THIS FIX FOR MODALS */
+.modal {
+  position: fixed !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal.show {
+  display: flex !important;
+  opacity: 1;
+}
+
+/* Ensure modal content is above everything */
+.modal-content {
+  z-index: 10000 !important;
+  position: relative !important;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.modal.show .modal-content {
+  transform: scale(1);
+}
+
+/* Force buttons to work */
+button {
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Fix for GitHub Pages overlay */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Add backdrop filter for modern browsers */
+.modal::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(2px);
+  z-index: -1;
+}
 </style>
 </head>
 <body>
@@ -70,26 +69,26 @@ label { display: block; margin: 8px 0; font-size: 14px; }
   <div class="sync-container">
     <span class="sync-status" id="syncStatus">Offline</span>
     <div style="position: relative;">
-      <button class="google-drive-btn" id="googleDriveBtn" onclick="toggleSyncOptions()">
+      <button class="google-drive-btn" id="googleDriveBtn">
         <span>G</span>
         <span id="driveBtnText">Sync with Drive</span>
       </button>
       <div class="sync-options" id="syncOptions">
         <div style="margin-bottom: 10px; font-weight: bold;">Google Drive Sync</div>
-        <button onclick="signInWithGoogle()" id="signInBtn">Sign in with Google</button>
-        <button onclick="signOutFromGoogle()" id="signOutBtn" style="display: none;">Sign out</button>
+        <button id="signInBtn">Sign in with Google</button>
+        <button id="signOutBtn" style="display: none;">Sign out</button>
         <hr>
-        <button onclick="forceSyncToDrive()">Sync Now</button>
-        <button onclick="loadFromDrive()">Load from Drive</button>
+        <button id="syncNowBtn">Sync Now</button>
+        <button id="loadFromDriveBtn">Load from Drive</button>
       </div>
     </div>
     <div class="user-info" id="userInfo" style="display: none;">
       <img id="userAvatar" class="user-avatar" src="" alt="">
       <span id="userName"></span>
     </div>
-    <button class="clear-data-btn" onclick="clearAllData()">Clear All</button>
-    <button class="add-btn secondary" onclick="openGroupModal()">+ Add Group</button>
-    <button class="add-btn" onclick="openTaskModal()">+ Add Task</button>
+    <button class="clear-data-btn" id="clearAllBtn">Clear All</button>
+    <button class="add-btn secondary" id="addGroupBtn">+ Add Group</button>
+    <button class="add-btn" id="addTaskBtn">+ Add Task</button>
   </div>
 </div>
 
@@ -112,8 +111,8 @@ label { display: block; margin: 8px 0; font-size: 14px; }
       </select>
     </label>
     <div class="modal-actions">
-      <button onclick="closeTaskModal()">Cancel</button>
-      <button onclick="saveTask()">Save</button>
+      <button id="cancelTaskBtn">Cancel</button>
+      <button id="saveTaskBtn">Save</button>
     </div>
   </div>
 </div>
@@ -124,520 +123,99 @@ label { display: block; margin: 8px 0; font-size: 14px; }
     <label>Group name <input id="groupName" style="width:100%"></label>
     <label>Group color <input type="color" id="groupColor"></label>
     <div class="modal-actions">
-      <button onclick="closeGroupModal()">Cancel</button>
-      <button onclick="saveGroup()" id="saveGroupBtn">Add</button>
+      <button id="cancelGroupBtn">Cancel</button>
+      <button id="saveGroupBtn">Add</button>
     </div>
   </div>
 </div>
 
-<div class="modal" id="deleteGroupModal">
-  <div class="modal-content">
-    <h3>Delete Group</h3>
-    <p>Are you sure you want to delete the group "<span id="deleteGroupName"></span>"?</p>
-    <div class="delete-group-actions">
-      <label>
-        <input type="radio" name="deleteOption" value="deleteTasks" checked> Delete all tasks in this group
-      </label>
-      <label>
-        <input type="radio" name="deleteOption" value="keepTasks"> Keep tasks (they will become ungrouped)
-      </label>
-      <button class="delete-group-btn" onclick="confirmDeleteGroup()">Delete Group</button>
-      <button onclick="closeDeleteGroupModal()">Cancel</button>
-    </div>
-  </div>
-</div>
+<!-- Your existing delete modal stays the same -->
 
 <script>
-// ==================== CONFIGURATION ====================
-// YOU must replace these with your own Google Cloud credentials
-// AFTER you host this on a real website
-const GOOGLE_CONFIG = {
-  clientId: '929057304226-tl2paj30bdkim7hp7q16g86u55g4adgc.apps.googleusercontent.com',
-  apiKey: 'AIzaSyDDGbG8N4Npk2ngM2R1GfZeoq4PRrs9MRE',
-  discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-  scope: 'https://www.googleapis.com/auth/drive.file'
-};
+// ============================================
+// EVENT LISTENER SETUP (FIX FOR GITHUB PAGES)
+// ============================================
 
-// ==================== APP STATE ====================
-const STORAGE_KEY = 'eisenhowerMatrixData';
-const FILE_VERSION = '1.0';
-const SYNC_FILE_NAME = 'eisenhower-matrix.json';
-
-let groups = {};
-let editingTask = null;
-let editingGroup = null;
-let deletingGroup = null;
-let googleUser = null;
-let syncInProgress = false;
-let lastSyncTime = null;
-
-// ==================== GOOGLE AUTH INIT ====================
-function initGoogleAuth() {
-  const gapiScript = document.createElement('script');
-  gapiScript.src = 'https://apis.google.com/js/api.js';
-  gapiScript.onload = () => {
-    gapi.load('client', initGapiClient);
-  };
-  document.head.appendChild(gapiScript);
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded - setting up event listeners');
   
-  const gisScript = document.createElement('script');
-  gisScript.src = 'https://accounts.google.com/gsi/client';
-  gisScript.onload = () => console.log('Google Identity Services loaded');
-  document.head.appendChild(gisScript);
-}
-
-async function initGapiClient() {
-  try {
-    await gapi.client.init({
-      apiKey: GOOGLE_CONFIG.apiKey,
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-    });
-    
-    const savedToken = localStorage.getItem('googleDriveToken');
-    if (savedToken) {
-      gapi.client.setToken(JSON.parse(savedToken));
-      googleUser = JSON.parse(savedToken);
-      updateAuthUI(true);
-      loadUserInfo();
-    }
-  } catch (error) {
-    console.error('Failed to initialize Google API:', error);
-  }
-}
-
-// ==================== GOOGLE AUTH FUNCTIONS ====================
-async function signInWithGoogle() {
-  if (!window.google || !window.google.accounts) {
-    alert('Google sign-in not loaded. Please refresh the page.');
-    return;
-  }
-  
-  const tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CONFIG.clientId,
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata',
-    callback: async (response) => {
-      if (response.error) {
-        console.error('Sign-in error:', response);
-        alert('Sign-in failed: ' + response.error_description);
-        return;
-      }
-      
-      gapi.client.setToken(response);
-      localStorage.setItem('googleDriveToken', JSON.stringify(response));
-      googleUser = response;
-      updateAuthUI(true);
-      await loadUserInfo();
-      
-      // Try to load existing data
-      setTimeout(() => loadFromDrive(), 1000);
-    },
+  // Set up button event listeners
+  document.getElementById('addTaskBtn').addEventListener('click', function() {
+    console.log('Add Task clicked');
+    showModal('taskModal');
   });
   
-  tokenClient.requestAccessToken({ prompt: 'consent' });
-  closeSyncOptions();
-}
-
-function signOutFromGoogle() {
-  if (googleUser) {
-    google.accounts.oauth2.revoke(googleUser.access_token);
-    gapi.client.setToken(null);
-    localStorage.removeItem('googleDriveToken');
-    localStorage.removeItem('googleUserInfo');
-    googleUser = null;
-    updateAuthUI(false);
-    updateSyncStatus('Offline');
-  }
-  closeSyncOptions();
-}
-
-async function loadUserInfo() {
-  try {
-    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { 'Authorization': `Bearer ${googleUser.access_token}` }
-    });
-    
-    if (response.ok) {
-      const userInfo = await response.json();
-      localStorage.setItem('googleUserInfo', JSON.stringify(userInfo));
-      document.getElementById('userAvatar').src = userInfo.picture || '';
-      document.getElementById('userName').textContent = userInfo.name || userInfo.email;
-      document.getElementById('userInfo').style.display = 'flex';
+  document.getElementById('addGroupBtn').addEventListener('click', function() {
+    console.log('Add Group clicked');
+    showModal('groupModal');
+  });
+  
+  document.getElementById('cancelTaskBtn').addEventListener('click', function() {
+    hideModal('taskModal');
+  });
+  
+  document.getElementById('cancelGroupBtn').addEventListener('click', function() {
+    hideModal('groupModal');
+  });
+  
+  document.getElementById('saveTaskBtn').addEventListener('click', saveTask);
+  document.getElementById('saveGroupBtn').addEventListener('click', saveGroup);
+  document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+  
+  // Google Drive buttons
+  document.getElementById('googleDriveBtn').addEventListener('click', toggleSyncOptions);
+  document.getElementById('signInBtn').addEventListener('click', signInWithGoogle);
+  document.getElementById('signOutBtn').addEventListener('click', signOutFromGoogle);
+  document.getElementById('syncNowBtn').addEventListener('click', forceSyncToDrive);
+  document.getElementById('loadFromDriveBtn').addEventListener('click', loadFromDrive);
+  
+  // Close modals when clicking outside
+  document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal')) {
+      hideModal(event.target.id);
     }
-  } catch (error) {
-    console.error('Error loading user info:', error);
-  }
-}
-
-function updateAuthUI(isSignedIn) {
-  if (isSignedIn) {
-    document.getElementById('signInBtn').style.display = 'none';
-    document.getElementById('signOutBtn').style.display = 'block';
-    document.getElementById('googleDriveBtn').classList.add('signed-in');
-    document.getElementById('driveBtnText').textContent = 'Synced';
-    updateSyncStatus('Online');
-    
-    const savedUserInfo = localStorage.getItem('googleUserInfo');
-    if (savedUserInfo) {
-      const userInfo = JSON.parse(savedUserInfo);
-      document.getElementById('userAvatar').src = userInfo.picture || '';
-      document.getElementById('userName').textContent = userInfo.name || userInfo.email;
-      document.getElementById('userInfo').style.display = 'flex';
+  });
+  
+  // Escape key to close modals
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      hideModal('taskModal');
+      hideModal('groupModal');
+      hideModal('deleteGroupModal');
     }
+  });
+  
+  console.log('Event listeners setup complete');
+});
+
+// ============================================
+// MODAL FUNCTIONS (FIXED)
+// ============================================
+
+function showModal(modalId) {
+  console.log('Showing modal:', modalId);
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
+    console.log('Modal shown successfully');
   } else {
-    document.getElementById('signInBtn').style.display = 'block';
-    document.getElementById('signOutBtn').style.display = 'none';
-    document.getElementById('googleDriveBtn').classList.remove('signed-in');
-    document.getElementById('driveBtnText').textContent = 'Sync with Drive';
-    document.getElementById('userInfo').style.display = 'none';
-    updateSyncStatus('Offline');
+    console.error('Modal not found:', modalId);
   }
 }
 
-// ==================== IMPROVED GOOGLE DRIVE SYNC ====================
-async function forceSyncToDrive() {
-  if (!googleUser) {
-    alert('Please sign in first');
-    return;
-  }
-  
-  if (syncInProgress) return;
-  
-  syncInProgress = true;
-  updateSyncStatus('Syncing...');
-  
-  try {
-    console.log('Starting sync...');
-    
-    const matrixData = getCurrentMatrixData();
-    console.log('Data to sync:', matrixData);
-    
-    const fileId = await findOrCreateDriveFile();
-    console.log('File ID:', fileId);
-    
-    await updateDriveFile(fileId, matrixData);
-    
-    lastSyncTime = new Date();
-    localStorage.setItem('lastSyncTime', lastSyncTime.toISOString());
-    updateSyncStatus(`Synced ${formatTime(lastSyncTime)}`);
-    
-    console.log('Sync successful!');
-    
-  } catch (error) {
-    console.error('Sync error details:', error);
-    
-    let errorMsg = 'Sync failed';
-    if (error.message.includes('403')) {
-      errorMsg = 'Permission denied. Please sign out and sign in again.';
-    } else if (error.message.includes('404')) {
-      errorMsg = 'File not found. Creating new file...';
-      await createNewDriveFile();
-    } else if (error.message.includes('400')) {
-      errorMsg = 'Invalid request. Token may have expired.';
-      signOutFromGoogle();
-    }
-    
-    alert(errorMsg);
-    updateSyncStatus('Sync failed: ' + errorMsg);
-  } finally {
-    syncInProgress = false;
-  }
-  
-  closeSyncOptions();
-}
-
-async function loadFromDrive() {
-  if (!googleUser) {
-    alert('Please sign in first');
-    return;
-  }
-  
-  if (syncInProgress) return;
-  
-  syncInProgress = true;
-  updateSyncStatus('Loading...');
-  
-  try {
-    console.log('Loading from Drive...');
-    
-    const fileId = await findOrCreateDriveFile();
-    console.log('Loading file ID:', fileId);
-    
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-      headers: { 'Authorization': `Bearer ${googleUser.access_token}` }
-    });
-    
-    console.log('Load response status:', response.status);
-    
-    if (response.ok) {
-      const text = await response.text();
-      console.log('Raw response text:', text);
-      
-      if (text && text.trim() !== '') {
-        try {
-          const data = JSON.parse(text);
-          console.log('Parsed data:', data);
-          
-          if (confirm('Load data from Google Drive? This will replace your current matrix.')) {
-            loadData(data);
-            saveToStorage();
-            updateSyncStatus('Loaded from Drive');
-          }
-        } catch (e) {
-          console.error('JSON parse error:', e, 'Text was:', text);
-          alert('Data file is corrupted. Creating fresh file.');
-          updateSyncStatus('Data corrupted');
-        }
-      } else {
-        console.log('File is empty');
-        alert('No data found in Google Drive. Add tasks and click "Sync Now" to create backup.');
-        updateSyncStatus('No data in Drive');
-      }
-    } else {
-      const errorText = await response.text();
-      console.error('Load failed:', response.status, errorText);
-      throw new Error(`Load failed: ${response.status} - ${errorText}`);
-    }
-    
-  } catch (error) {
-    console.error('Load error:', error);
-    
-    let errorMsg = 'Failed to load from Google Drive';
-    if (error.message.includes('404')) {
-      errorMsg = 'No data file found. Add some tasks and click "Sync Now" to create one.';
-    } else if (error.message.includes('403')) {
-      errorMsg = 'Permission denied. Please sign out and sign in again.';
-    }
-    
-    alert(errorMsg);
-    updateSyncStatus('Load failed');
-  } finally {
-    syncInProgress = false;
-  }
-  
-  closeSyncOptions();
-}
-
-async function findOrCreateDriveFile() {
-  try {
-    console.log('Looking for file:', SYNC_FILE_NAME);
-    
-    const response = await gapi.client.drive.files.list({
-      q: `name='${SYNC_FILE_NAME}' and trashed=false`,
-      fields: 'files(id, name, mimeType)',
-      spaces: 'drive'
-    });
-    
-    console.log('Search response:', response);
-    
-    if (response.result.files && response.result.files.length > 0) {
-      console.log('Found existing file:', response.result.files[0]);
-      return response.result.files[0].id;
-    }
-    
-    console.log('Creating new file...');
-    return await createNewDriveFile();
-    
-  } catch (error) {
-    console.error('Error in findOrCreateDriveFile:', error);
-    throw error;
+function hideModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('show');
+    document.body.classList.remove('modal-open');
   }
 }
 
-async function createNewDriveFile() {
-  try {
-    const initialData = {
-      version: FILE_VERSION,
-      timestamp: new Date().toISOString(),
-      groups: {},
-      tasks: []
-    };
-    
-    const fileMetadata = {
-      name: SYNC_FILE_NAME,
-      mimeType: 'application/json',
-      description: 'Eisenhower Matrix Data'
-    };
-    
-    console.log('Creating file with metadata:', fileMetadata);
-    
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
-    form.append('file', new Blob([JSON.stringify(initialData, null, 2)], { type: 'application/json' }));
-    
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${googleUser.access_token}`
-      },
-      body: form
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to create file: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    console.log('File created:', result);
-    return result.id;
-    
-  } catch (error) {
-    console.error('Error creating file:', error);
-    throw error;
-  }
-}
-
-async function updateDriveFile(fileId, data) {
-  try {
-    console.log('Updating file:', fileId, 'with data:', data);
-    
-    const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${googleUser.access_token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data, null, 2)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Update failed:', response.status, errorText);
-      throw new Error(`Update failed: ${response.status} - ${errorText}`);
-    }
-    
-    console.log('Update successful');
-    return await response.json();
-    
-  } catch (error) {
-    console.error('Error updating file:', error);
-    throw error;
-  }
-}
-
-// ==================== MATRIX DATA FUNCTIONS ====================
-function getCurrentMatrixData() {
-  const tasks = [];
-  document.querySelectorAll('.task').forEach(task => {
-    tasks.push({
-      name: task.dataset.name,
-      important: task.dataset.important === 'true',
-      urgent: task.dataset.urgent === 'true',
-      group: task.dataset.group || '',
-      quadrant: getTaskQuadrant(task)
-    });
-  });
-  
-  return {
-    version: FILE_VERSION,
-    timestamp: new Date().toISOString(),
-    groups: { ...groups },
-    tasks: tasks
-  };
-}
-
-function getTaskQuadrant(task) {
-  const quadrant = task.closest('.quadrant');
-  return quadrant ? quadrant.id : '';
-}
-
-function saveToStorage() {
-  const data = getCurrentMatrixData();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  
-  if (googleUser && !syncInProgress) {
-    clearTimeout(window.syncTimeout);
-    window.syncTimeout = setTimeout(() => forceSyncToDrive(), 2000);
-  }
-}
-
-function loadData(data) {
-  clearCurrentData();
-  groups = data.groups || {};
-  
-  const select = document.getElementById('taskGroup');
-  select.innerHTML = '<option value="">No Group</option>';
-  Object.keys(groups).forEach(name => {
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    select.appendChild(opt);
-  });
-  
-  if (data.tasks) {
-    data.tasks.forEach(taskData => createTaskFromData(taskData));
-  }
-  
-  initGroupContainers();
-}
-
-function clearCurrentData() {
-  document.querySelectorAll('.quadrant').forEach(q => {
-    q.innerHTML = '<h2>' + q.querySelector('h2').textContent + '</h2>';
-  });
-}
-
-function createTaskFromData(taskData) {
-  const { name, important, urgent, group, quadrant } = taskData;
-  const quadrantEl = document.getElementById(quadrant);
-  if (!quadrantEl) return;
-  
-  const task = document.createElement('div');
-  task.className = 'task';
-  task.draggable = true;
-  task.dataset.name = name;
-  task.dataset.important = important;
-  task.dataset.urgent = urgent;
-  task.dataset.group = group;
-
-  task.innerHTML = `
-    <div class="task-left">
-      ${group && groups[group] ? `<span class="group-dot" style="background:${groups[group]}"></span>` : ''}
-      <span>${name}</span>
-    </div>
-    <div class="task-menu">
-      <span class="dots">⋮</span>
-      <div class="menu">
-        <div onclick="openTaskModal(this.closest('.task'))">Edit</div>
-        <div onclick="deleteTask(this.closest('.task'))">Delete</div>
-      </div>
-    </div>`;
-
-  task.querySelector('.dots').onclick = e => {
-    e.stopPropagation();
-    const menu = e.target.nextElementSibling;
-    const isVisible = menu.style.display === 'block';
-    document.querySelectorAll('.menu').forEach(m => m.style.display = 'none');
-    document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
-    menu.style.display = isVisible ? 'none' : 'block';
-  };
-
-  task.addEventListener('dragstart', (e) => {
-    e.stopPropagation();
-    task.classList.add('dragging');
-  });
-  
-  task.addEventListener('dragend', () => {
-    task.classList.remove('dragging');
-    saveToStorage();
-  });
-
-  if (group && groups[group]) {
-    let groupContainer = Array.from(quadrantEl.querySelectorAll('.group-container'))
-      .find(g => g.dataset.name === group);
-    if (!groupContainer) {
-      groupContainer = createGroupContainer(group, quadrantEl);
-    }
-    groupContainer.querySelector('.group-tasks').appendChild(task);
-  } else {
-    quadrantEl.appendChild(task);
-  }
-}
-
-// ==================== TASK FUNCTIONS ====================
 function openTaskModal(task = null) {
   editingTask = task;
-  document.getElementById('taskModal').style.display = 'flex';
-
+  showModal('taskModal');
+  
   if (!task) {
     document.getElementById('taskName').value = '';
     document.getElementById('important').checked = false;
@@ -645,7 +223,7 @@ function openTaskModal(task = null) {
     document.getElementById('taskGroup').value = '';
     return;
   }
-
+  
   document.getElementById('taskName').value = task.dataset.name;
   document.getElementById('important').checked = task.dataset.important === 'true';
   document.getElementById('urgent').checked = task.dataset.urgent === 'true';
@@ -654,10 +232,29 @@ function openTaskModal(task = null) {
 
 function closeTaskModal() {
   editingTask = null;
-  document.getElementById('taskModal').style.display = 'none';
+  hideModal('taskModal');
 }
 
+function openGroupModal() {
+  editingGroup = null;
+  document.getElementById('groupModalTitle').textContent = 'Add Group';
+  document.getElementById('groupName').value = '';
+  document.getElementById('groupColor').value = '#1976d2';
+  document.getElementById('saveGroupBtn').textContent = 'Add';
+  showModal('groupModal');
+}
+
+function closeGroupModal() {
+  editingGroup = null;
+  hideModal('groupModal');
+}
+
+// ============================================
+// TASK FUNCTIONS (KEEP YOUR EXISTING LOGIC)
+// ============================================
+
 function saveTask() {
+  // Your existing saveTask function
   const taskNameEl = document.getElementById('taskName');
   const importantEl = document.getElementById('important');
   const urgentEl = document.getElementById('urgent');
@@ -670,7 +267,14 @@ function saveTask() {
   const isUrgent = urgentEl.checked;
   const group = taskGroupEl.value;
 
-  const quadrantId = isImportant && isUrgent ? 'q1' : isImportant ? 'q2' : isUrgent ? 'q3' : 'q4';
+  const quadrantId = isImportant && isUrgent
+    ? 'q1'
+    : isImportant
+    ? 'q2'
+    : isUrgent
+    ? 'q3'
+    : 'q4';
+
   const quadrant = document.getElementById(quadrantId);
 
   const task = editingTask || document.createElement('div');
@@ -689,19 +293,19 @@ function saveTask() {
     <div class="task-menu">
       <span class="dots">⋮</span>
       <div class="menu">
-        <div onclick="openTaskModal(this.closest('.task'))">Edit</div>
-        <div onclick="deleteTask(this.closest('.task'))">Delete</div>
+        <div class="edit-task-btn">Edit</div>
+        <div class="delete-task-btn">Delete</div>
       </div>
     </div>`;
 
-  task.querySelector('.dots').onclick = e => {
-    e.stopPropagation();
-    const menu = e.target.nextElementSibling;
-    const isVisible = menu.style.display === 'block';
-    document.querySelectorAll('.menu').forEach(m => m.style.display = 'none');
-    document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
-    menu.style.display = isVisible ? 'none' : 'block';
-  };
+  // Add event listeners for the new buttons
+  task.querySelector('.edit-task-btn').addEventListener('click', function() {
+    openTaskModal(task);
+  });
+  
+  task.querySelector('.delete-task-btn').addEventListener('click', function() {
+    deleteTask(task);
+  });
 
   task.addEventListener('dragstart', (e) => {
     e.stopPropagation();
@@ -723,336 +327,39 @@ function saveTask() {
     quadrant.appendChild(task);
   }
 
-  saveToStorage();
+  saveToLocalStorage();
   closeTaskModal();
 }
 
-function deleteTask(task) {
-  const groupContainer = task.closest('.group-container');
-  task.remove();
-  
-  if (groupContainer && groupContainer.querySelectorAll('.task').length === 0) {
-    groupContainer.remove();
-  }
-  
-  saveToStorage();
-}
+// ============================================
+// DRAG AND DROP SETUP
+// ============================================
 
-// ==================== GROUP FUNCTIONS ====================
-function createGroupContainer(groupName, quadrant) {
-  const groupContainer = document.createElement('div');
-  groupContainer.className = 'group-container';
-  groupContainer.dataset.name = groupName;
-  groupContainer.innerHTML = `
-    <div class="group-header" style="background-color:${groups[groupName]}">
-      <div class="group-header-left">
-        <span>${groupName}</span>
-      </div>
-      <div class="group-menu">
-        <span class="group-dots">⋮</span>
-        <div class="group-menu-content">
-          <div onclick="openEditGroupModal('${groupName}')">Edit Group</div>
-          <div onclick="openDeleteGroupModal('${groupName}')">Delete Group</div>
-        </div>
-      </div>
-    </div>
-    <div class="group-tasks"></div>
-  `;
-  
-  quadrant.appendChild(groupContainer);
-  setupGroupContainerDraggable(groupContainer);
-  setupGroupMenu(groupContainer);
-  
-  return groupContainer;
-}
-
-function setupGroupContainerDraggable(groupContainer) {
-  groupContainer.draggable = true;
-  groupContainer.addEventListener('dragstart', (e) => {
-    if (e.target.classList.contains('group-dots')) {
-      e.preventDefault();
-      return;
-    }
-    e.stopPropagation();
-    groupContainer.classList.add('dragging');
-  });
-  
-  groupContainer.addEventListener('dragend', () => {
-    groupContainer.classList.remove('dragging');
-    saveToStorage();
-  });
-}
-
-function setupGroupMenu(groupContainer) {
-  const groupDots = groupContainer.querySelector('.group-dots');
-  const groupMenu = groupContainer.querySelector('.group-menu-content');
-  
-  groupDots.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isVisible = groupMenu.style.display === 'block';
-    document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
-    groupMenu.style.display = isVisible ? 'none' : 'block';
-  });
-}
-
-function initGroupContainers() {
-  document.querySelectorAll('.group-container').forEach(groupContainer => {
-    setupGroupContainerDraggable(groupContainer);
-    setupGroupMenu(groupContainer);
-  });
-}
-
-function openGroupModal() {
-  editingGroup = null;
-  document.getElementById('groupModalTitle').textContent = 'Add Group';
-  document.getElementById('groupName').value = '';
-  document.getElementById('groupColor').value = '#1976d2';
-  document.getElementById('saveGroupBtn').textContent = 'Add';
-  document.getElementById('groupModal').style.display = 'flex';
-}
-
-function closeGroupModal() {
-  editingGroup = null;
-  document.getElementById('groupModal').style.display = 'none';
-}
-
-function saveGroup() {
-  const name = document.getElementById('groupName').value.trim();
-  const color = document.getElementById('groupColor').value;
-  
-  if (!name) return;
-
-  if (editingGroup) {
-    const oldName = editingGroup;
-    
-    document.querySelectorAll(`.group-container[data-name="${oldName}"]`).forEach(container => {
-      container.dataset.name = name;
-      const header = container.querySelector('.group-header');
-      header.style.backgroundColor = color;
-      header.querySelector('.group-header-left span').textContent = name;
-      
-      const editBtn = container.querySelector('.group-menu-content div:first-child');
-      const deleteBtn = container.querySelector('.group-menu-content div:last-child');
-      editBtn.setAttribute('onclick', `openEditGroupModal('${name}')`);
-      deleteBtn.setAttribute('onclick', `openDeleteGroupModal('${name}')`);
-    });
-    
-    document.querySelectorAll(`.task[data-group="${oldName}"]`).forEach(task => {
-      task.dataset.group = name;
-      const groupDot = task.querySelector('.group-dot');
-      if (groupDot) {
-        groupDot.style.background = color;
-      }
-    });
-    
-    const oldOption = document.querySelector(`#taskGroup option[value="${oldName}"]`);
-    if (oldOption) {
-      oldOption.value = name;
-      oldOption.textContent = name;
-    }
-    
-    delete groups[oldName];
-    groups[name] = color;
-  } else {
-    groups[name] = color;
-    
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    document.getElementById('taskGroup').appendChild(opt);
-  }
-
-  saveToStorage();
-  closeGroupModal();
-}
-
-function openEditGroupModal(groupName) {
-  editingGroup = groupName;
-  document.getElementById('groupModalTitle').textContent = 'Edit Group';
-  document.getElementById('groupName').value = groupName;
-  document.getElementById('groupColor').value = groups[groupName];
-  document.getElementById('saveGroupBtn').textContent = 'Save Changes';
-  document.getElementById('groupModal').style.display = 'flex';
-  
-  document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
-}
-
-function openDeleteGroupModal(groupName) {
-  deletingGroup = groupName;
-  document.getElementById('deleteGroupName').textContent = groupName;
-  document.getElementById('deleteGroupModal').style.display = 'flex';
-  
-  document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
-}
-
-function closeDeleteGroupModal() {
-  deletingGroup = null;
-  document.getElementById('deleteGroupModal').style.display = 'none';
-}
-
-function confirmDeleteGroup() {
-  if (!deletingGroup) return;
-  
-  const deleteOption = document.querySelector('input[name="deleteOption"]:checked').value;
-  const groupName = deletingGroup;
-  
-  document.querySelectorAll(`.group-container[data-name="${groupName}"]`).forEach(groupContainer => {
-    if (deleteOption === 'deleteTasks') {
-      groupContainer.querySelectorAll('.task').forEach(task => task.remove());
-    } else {
-      const tasks = groupContainer.querySelectorAll('.task');
-      const quadrant = groupContainer.closest('.quadrant');
-      
-      tasks.forEach(task => {
-        task.dataset.group = '';
-        const groupDot = task.querySelector('.group-dot');
-        if (groupDot) {
-          groupDot.remove();
-        }
-        quadrant.appendChild(task);
-      });
-    }
-    
-    groupContainer.remove();
-  });
-  
-  delete groups[groupName];
-  
-  const groupOption = document.querySelector(`#taskGroup option[value="${groupName}"]`);
-  if (groupOption) {
-    groupOption.remove();
-  }
-  
-  saveToStorage();
-  closeDeleteGroupModal();
-}
-
-// ==================== DRAG AND DROP ====================
 document.querySelectorAll('.quadrant').forEach(q => {
   q.addEventListener('dragover', e => e.preventDefault());
-  q.addEventListener('drop', e => {
+  q.addEventListener('drop', function(e) {
     e.preventDefault();
     const draggedElement = document.querySelector('.dragging');
     if (!draggedElement) return;
     
     const targetQuadrant = e.currentTarget;
     
-    if (draggedElement.classList.contains('group-container')) {
-      draggedElement.classList.remove('dragging');
-      const groupName = draggedElement.dataset.name;
-      
-      const existingGroupContainer = Array.from(targetQuadrant.querySelectorAll('.group-container'))
-        .find(g => g.dataset.name === groupName);
-      
-      if (existingGroupContainer && existingGroupContainer !== draggedElement) {
-        const draggedTasks = draggedElement.querySelectorAll('.task');
-        const existingTasksContainer = existingGroupContainer.querySelector('.group-tasks');
-        
-        Array.from(draggedTasks).forEach(t => {
-          existingTasksContainer.appendChild(t);
-        });
-        
-        draggedElement.remove();
-      } else if (existingGroupContainer !== draggedElement) {
-        targetQuadrant.appendChild(draggedElement);
-      }
-    } else if (draggedElement.classList.contains('task')) {
-      draggedElement.classList.remove('dragging');
-      const group = draggedElement.dataset.group;
-      const sourceGroupContainer = draggedElement.closest('.group-container');
-      
-      if (group && sourceGroupContainer) {
-        const groupName = sourceGroupContainer.dataset.name;
-        const existingGroupContainer = Array.from(targetQuadrant.querySelectorAll('.group-container'))
-          .find(g => g.dataset.name === groupName);
-        
-        if (existingGroupContainer) {
-          existingGroupContainer.querySelector('.group-tasks').appendChild(draggedElement);
-        } else {
-          createGroupContainer(groupName, targetQuadrant);
-          targetQuadrant.querySelector(`.group-container[data-name="${groupName}"] .group-tasks`)
-            .appendChild(draggedElement);
-        }
-        
-        if (sourceGroupContainer && (!existingGroupContainer || sourceGroupContainer !== existingGroupContainer)) {
-          if (sourceGroupContainer.querySelectorAll('.task').length === 0) {
-            sourceGroupContainer.remove();
-          }
-        }
-      } else {
-        targetQuadrant.appendChild(draggedElement);
-      }
-    }
+    // Your existing drop logic
+    // ... (copy your existing drop event handler here)
     
-    document.querySelectorAll('.menu').forEach(m => m.style.display = 'none');
-    document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
-    
-    saveToStorage();
+    saveToLocalStorage();
   });
 });
 
-// ==================== UI UTILITIES ====================
-function toggleSyncOptions() {
-  document.getElementById('syncOptions').classList.toggle('show');
-}
+// ============================================
+// INITIALIZATION
+// ============================================
 
-function closeSyncOptions() {
-  document.getElementById('syncOptions').classList.remove('show');
-}
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.sync-container')) {
-    closeSyncOptions();
-  }
-});
-
-function updateSyncStatus(status) {
-  const el = document.getElementById('syncStatus');
-  el.textContent = status;
-  el.className = 'sync-status';
-  
-  if (status.includes('Syncing') || status.includes('Loading')) {
-    el.classList.add('syncing');
-  } else if (status.includes('Synced') || status.includes('Loaded') || status === 'Online') {
-    el.classList.add('online');
-  } else {
-    el.classList.add('offline');
-  }
-}
-
-function formatTime(date) {
-  if (!date) return '';
-  const now = new Date();
-  const diff = now - date;
-  const minutes = Math.floor(diff / 60000);
-  
-  if (minutes < 1) return 'just now';
-  if (minutes === 1) return '1 min ago';
-  if (minutes < 60) return `${minutes} mins ago`;
-  
-  const hours = Math.floor(minutes / 60);
-  if (hours === 1) return '1 hour ago';
-  if (hours < 24) return `${hours} hours ago`;
-  
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'yesterday';
-  return `${days} days ago`;
-}
-
-function clearAllData() {
-  if (confirm('Clear all data?')) {
-    localStorage.removeItem(STORAGE_KEY);
-    clearCurrentData();
-    groups = {};
-    document.getElementById('taskGroup').innerHTML = '<option value="">No Group</option>';
-  }
-}
-
-// ==================== STARTUP ====================
-document.addEventListener('DOMContentLoaded', () => {
-  initGoogleAuth();
-  
-  const savedData = localStorage.getItem(STORAGE_KEY);
+// Your existing initialization code
+// Make sure it runs AFTER DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Load from localStorage
+  const savedData = localStorage.getItem('eisenhowerMatrixData');
   if (savedData) {
     try {
       loadData(JSON.parse(savedData));
@@ -1061,12 +368,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   
-  const lastSync = localStorage.getItem('lastSyncTime');
-  if (lastSync) {
-    lastSyncTime = new Date(lastSync);
-    updateSyncStatus(`Last sync: ${formatTime(lastSyncTime)}`);
-  }
+  // Initialize groups dropdown
+  updateGroupsDropdown();
 });
+
+function updateGroupsDropdown() {
+  const select = document.getElementById('taskGroup');
+  select.innerHTML = '<option value="">No Group</option>';
+  Object.keys(groups).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+// Your existing utility functions
+let groups = {};
+let editingTask = null;
+let editingGroup = null;
+let deletingGroup = null;
+
+function saveToLocalStorage() {
+  const data = getCurrentMatrixData();
+  localStorage.setItem('eisenhowerMatrixData', JSON.stringify(data));
+}
+
+function getCurrentMatrixData() {
+  const tasks = [];
+  document.querySelectorAll('.task').forEach(task => {
+    tasks.push({
+      name: task.dataset.name,
+      important: task.dataset.important === 'true',
+      urgent: task.dataset.urgent === 'true',
+      group: task.dataset.group || '',
+      quadrant: getTaskQuadrant(task)
+    });
+  });
+  
+  return {
+    version: '1.0',
+    timestamp: new Date().toISOString(),
+    groups: { ...groups },
+    tasks: tasks
+  };
+}
+
+function getTaskQuadrant(task) {
+  const quadrant = task.closest('.quadrant');
+  return quadrant ? quadrant.id : '';
+}
+
+// ... rest of your existing functions
 </script>
 </body>
 </html>
