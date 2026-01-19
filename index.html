@@ -118,7 +118,18 @@
     background: #eee; 
   }
 
-  .group-tasks { padding-left: 15px; display: flex; flex-direction: column; gap: 6px; }
+  .group-content {
+    padding-left: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 10px;
+  }
+
+  /* Nested groups visual indent */
+  .group-content > .group-container {
+    margin-left: 10px;
+  }
 
   .task {
     display: flex;
@@ -376,10 +387,10 @@
 </div>
 
 <div class="matrix">
-  <div class="quadrant q1" id="q1"><h2>Important & Urgent</h2></div>
-  <div class="quadrant q2" id="q2"><h2>Important & Not Urgent</h2></div>
-  <div class="quadrant q3" id="q3"><h2>Not Important & Urgent</h2></div>
-  <div class="quadrant q4" id="q4"><h2>Not Important & Not Urgent</h2></div>
+  <div class="quadrant q1" id="q1"><h2>Important &amp; Urgent</h2></div>
+  <div class="quadrant q2" id="q2"><h2>Important &amp; Not Urgent</h2></div>
+  <div class="quadrant q3" id="q3"><h2>Not Important &amp; Urgent</h2></div>
+  <div class="quadrant q4" id="q4"><h2>Not Important &amp; Not Urgent</h2></div>
 </div>
 
 <div class="modal" id="taskModal">
@@ -405,6 +416,11 @@
     <h3 id="groupModalTitle">Add Group</h3>
     <label>Group name <input id="groupName" style="width:100%"></label>
     <label>Group color <input type="color" id="groupColor"></label>
+    <label>Parent group
+      <select id="groupParent" style="width:100%">
+        <option value="">No Parent</option>
+      </select>
+    </label>
     <div class="modal-actions">
       <button onclick="closeGroupModal()">Cancel</button>
       <button onclick="saveGroup()" id="saveGroupBtn">Add</button>
@@ -463,7 +479,7 @@ function initGoogleAuth() {
     gapi.load('client', initGapiClient);
   };
   document.head.appendChild(gapiScript);
-  
+
   const gisScript = document.createElement('script');
   gisScript.src = 'https://accounts.google.com/gsi/client';
   gisScript.onload = () => console.log('Google Identity Services loaded');
@@ -476,7 +492,7 @@ async function initGapiClient() {
       apiKey: GOOGLE_CONFIG.apiKey,
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
     });
-    
+
     const savedToken = localStorage.getItem('googleDriveToken');
     if (savedToken) {
       gapi.client.setToken(JSON.parse(savedToken));
@@ -497,7 +513,7 @@ async function signInWithGoogle() {
     alert('Google sign-in not loaded. Please refresh the page.');
     return;
   }
-  
+
   const tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CONFIG.clientId,
     scope: 'https://www.googleapis.com/auth/drive.file',
@@ -506,7 +522,7 @@ async function signInWithGoogle() {
         console.error('Sign-in error:', response);
         return;
       }
-      
+
       gapi.client.setToken(response);
       localStorage.setItem('googleDriveToken', JSON.stringify(response));
       googleUser = response;
@@ -515,7 +531,7 @@ async function signInWithGoogle() {
       loadFromDrive();
     },
   });
-  
+
   tokenClient.requestAccessToken({ prompt: 'consent' });
   closeSyncOptions();
 }
@@ -538,7 +554,7 @@ async function loadUserInfo() {
     const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { 'Authorization': `Bearer ${googleUser.access_token}` }
     });
-    
+
     if (response.ok) {
       const userInfo = await response.json();
       localStorage.setItem('googleUserInfo', JSON.stringify(userInfo));
@@ -558,7 +574,7 @@ function updateAuthUI(isSignedIn) {
     document.getElementById('googleDriveBtn').classList.add('signed-in');
     document.getElementById('driveBtnText').textContent = 'Synced';
     updateSyncStatus('Online');
-    
+
     const savedUserInfo = localStorage.getItem('googleUserInfo');
     if (savedUserInfo) {
       const userInfo = JSON.parse(savedUserInfo);
@@ -584,17 +600,17 @@ async function forceSyncToDrive() {
     alert('Please sign in first');
     return;
   }
-  
+
   if (syncInProgress) return;
-  
+
   syncInProgress = true;
   updateSyncStatus('Syncing...');
-  
+
   try {
     const matrixData = getCurrentMatrixData();
     const fileId = await findOrCreateDriveFile();
     await updateDriveFile(fileId, matrixData);
-    
+
     lastSyncTime = new Date();
     localStorage.setItem('lastSyncTime', lastSyncTime.toISOString());
     updateSyncStatus(`Synced ${formatTime(lastSyncTime)}`);
@@ -604,7 +620,7 @@ async function forceSyncToDrive() {
   } finally {
     syncInProgress = false;
   }
-  
+
   closeSyncOptions();
 }
 
@@ -613,18 +629,18 @@ async function loadFromDrive() {
     alert('Please sign in first');
     return;
   }
-  
+
   if (syncInProgress) return;
-  
+
   syncInProgress = true;
   updateSyncStatus('Loading...');
-  
+
   try {
     const fileId = await findOrCreateDriveFile();
     const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
       headers: { 'Authorization': `Bearer ${googleUser.access_token}` }
     });
-    
+
     if (response.ok) {
       const data = await response.json();
       if (confirm('Load data from Google Drive? This will replace your current matrix.')) {
@@ -644,7 +660,7 @@ async function loadFromDrive() {
   } finally {
     syncInProgress = false;
   }
-  
+
   closeSyncOptions();
 }
 
@@ -655,16 +671,16 @@ async function findOrCreateDriveFile() {
       fields: 'files(id, name)',
       spaces: 'drive'
     });
-    
+
     if (response.result.files.length > 0) {
       return response.result.files[0].id;
     }
-    
+
     const createResponse = await gapi.client.drive.files.create({
       resource: { name: SYNC_FILE_NAME, mimeType: 'application/json' },
       fields: 'id'
     });
-    
+
     return createResponse.result.id;
   } catch (error) {
     console.error('Error with Drive file:', error);
@@ -681,94 +697,110 @@ async function updateDriveFile(fileId, data) {
     },
     body: JSON.stringify(data)
   });
-  
+
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
-  
+
   return response.json();
 }
 
 // ============================================
-// MATRIX CORE FUNCTIONS
+// MATRIX CORE FUNCTIONS (NESTED GROUPS)
 // ============================================
-function getCurrentMatrixData() {
-  const tasks = [];
-  document.querySelectorAll('.task').forEach(task => {
-    tasks.push({
-      name: task.dataset.name,
-      important: task.dataset.important === 'true',
-      urgent: task.dataset.urgent === 'true',
-      group: task.dataset.group || '',
-      quadrant: getTaskQuadrant(task)
-    });
+
+function safeEscapeSelector(value) {
+  // Safe for querySelector / CSS selectors
+  if (window.CSS && CSS.escape) return CSS.escape(String(value));
+  // Fallback: prefix special chars with backslash
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, (ch) => '\\' + ch);
+}
+
+function getGroupContent(groupContainer) {
+  return groupContainer.querySelector('.group-content');
+}
+
+function isInside(el, possibleAncestor) {
+  return possibleAncestor && possibleAncestor.contains(el);
+}
+
+function getGroupChainFromElement(el) {
+  // Returns group names from outermost -> innermost for the given element
+  const chain = [];
+  let currentGroup = el ? el.closest('.group-container') : null;
+  while (currentGroup && currentGroup.classList.contains('group-container')) {
+    chain.unshift(currentGroup.dataset.name);
+    currentGroup = currentGroup.parentElement ? currentGroup.parentElement.closest('.group-container') : null;
+  }
+  return chain;
+}
+
+function ensureGroupChainInQuadrant(quadrantEl, chain) {
+  // Ensures nested group containers exist (outer -> inner) and returns the innermost container
+  let parentContainerEl = quadrantEl;
+  let parentName = '';
+  let currentContainer = null;
+
+  chain.forEach(name => {
+    const safe = safeEscapeSelector(name);
+    let existing = parentContainerEl.querySelector(`:scope > .group-container[data-name="${safe}"]`);
+
+    if (!existing) {
+      existing = createGroupContainer(name, parentContainerEl, parentName);
+    }
+
+    existing.dataset.parent = parentName;
+    currentContainer = existing;
+    parentName = name;
+    parentContainerEl = getGroupContent(existing);
   });
-  
-  return {
-    version: FILE_VERSION,
-    timestamp: new Date().toISOString(),
-    groups: { ...groups },
-    tasks: tasks
-  };
+
+  return currentContainer;
 }
 
-function getTaskQuadrant(task) {
-  const quadrant = task.closest('.quadrant');
-  return quadrant ? quadrant.id : '';
+function getGroupChainByName(groupName) {
+  // Builds outer->...->groupName based on dataset.parent lookups.
+  // This keeps membership stable across quadrants even if ancestors are missing in the target quadrant.
+  const chain = [];
+  const seen = new Set();
+  let current = groupName;
+
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    chain.unshift(current);
+
+    const safe = safeEscapeSelector(current);
+    const inst = document.querySelector(`.group-container[data-name="${safe}"]`);
+    const parent = inst ? (inst.dataset.parent || '') : '';
+
+    current = parent;
+  }
+
+  return chain;
 }
 
-function saveToStorage() {
-  const data = getCurrentMatrixData();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  
-  if (googleUser && !syncInProgress) {
-    clearTimeout(window.syncTimeout);
-    window.syncTimeout = setTimeout(() => forceSyncToDrive(), 2000);
+function cleanupEmptyGroupChain(startGroupContainer) {
+  let current = startGroupContainer;
+  while (current && current.classList && current.classList.contains('group-container')) {
+    const content = getGroupContent(current);
+    if (content && content.children.length === 0) {
+      const parentGroup = current.parentElement.closest('.group-container');
+      current.remove();
+      current = parentGroup;
+    } else {
+      break;
+    }
   }
 }
 
-function loadData(data) {
-  clearCurrentData();
-  groups = data.groups || {};
-  
-  const select = document.getElementById('taskGroup');
-  select.innerHTML = '<option value="">No Group</option>';
-  Object.keys(groups).forEach(name => {
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    select.appendChild(opt);
-  });
-  
-  if (data.tasks) {
-    data.tasks.forEach(taskData => createTaskFromData(taskData));
-  }
-  
-  initGroupContainers();
-}
+function refreshTaskUI(taskEl) {
+  const name = taskEl.dataset.name || '';
+  const group = taskEl.dataset.group || '';
+  const dotHtml = (group && groups[group]) ? `<span class="group-dot" style="background:${groups[group]}"></span>` : '';
 
-function clearCurrentData() {
-  document.querySelectorAll('.quadrant').forEach(q => {
-    q.innerHTML = '<h2>' + q.querySelector('h2').textContent + '</h2>';
-  });
-}
-
-function createTaskFromData(taskData) {
-  const { name, important, urgent, group, quadrant } = taskData;
-  const quadrantEl = document.getElementById(quadrant);
-  if (!quadrantEl) return;
-  
-  const task = document.createElement('div');
-  task.className = 'task';
-  task.draggable = true;
-  task.dataset.name = name;
-  task.dataset.important = important;
-  task.dataset.urgent = urgent;
-  task.dataset.group = group;
-
-  task.innerHTML = `
+  taskEl.innerHTML = `
     <div class="task-left">
-      ${group && groups[group] ? `<span class="group-dot" style="background:${groups[group]}"></span>` : ''}
+      ${dotHtml}
       <span>${name}</span>
     </div>
     <div class="task-menu">
@@ -779,7 +811,7 @@ function createTaskFromData(taskData) {
       </div>
     </div>`;
 
-  task.querySelector('.dots').onclick = e => {
+  taskEl.querySelector('.dots').onclick = e => {
     e.stopPropagation();
     const menu = e.target.nextElementSibling;
     const isVisible = menu.style.display === 'block';
@@ -788,33 +820,163 @@ function createTaskFromData(taskData) {
     menu.style.display = isVisible ? 'none' : 'block';
   };
 
-  task.addEventListener('dragstart', (e) => {
+  taskEl.addEventListener('dragstart', (e) => {
     e.stopPropagation();
-    task.classList.add('dragging');
-  });
-  
-  task.addEventListener('dragend', () => {
-    task.classList.remove('dragging');
-    saveToStorage();
+    taskEl.classList.add('dragging');
   });
 
-  if (group && groups[group]) {
-    let groupContainer = Array.from(quadrantEl.querySelectorAll('.group-container'))
-      .find(g => g.dataset.name === group);
-    if (!groupContainer) {
-      groupContainer = createGroupContainer(group, quadrantEl);
+  taskEl.addEventListener('dragend', () => {
+    taskEl.classList.remove('dragging');
+    saveToStorage();
+  });
+}
+
+function createTaskElement({ name, important, urgent, group }) {
+  const task = document.createElement('div');
+  task.className = 'task';
+  task.draggable = true;
+  task.dataset.name = name;
+  task.dataset.important = String(!!important);
+  task.dataset.urgent = String(!!urgent);
+  task.dataset.group = group || '';
+  refreshTaskUI(task);
+  return task;
+}
+
+function ensureGroupContainerInScope(scopeEl, groupName) {
+  const safe = safeEscapeSelector(groupName);
+  let container = scopeEl.querySelector(`.group-container[data-name="${safe}"]`);
+  if (!container) {
+    container = createGroupContainer(groupName, scopeEl);
+  }
+  return container;
+}
+
+function getQuadrantFromImportantUrgent(isImportant, isUrgent) {
+  return isImportant && isUrgent ? 'q1' : isImportant ? 'q2' : isUrgent ? 'q3' : 'q4';
+}
+
+// --- Serialization: save full nested layout ---
+function serializeItems(containerEl) {
+  const items = [];
+  Array.from(containerEl.children).forEach(child => {
+    if (child.classList.contains('task')) {
+      items.push({
+        type: 'task',
+        name: child.dataset.name,
+        important: child.dataset.important === 'true',
+        urgent: child.dataset.urgent === 'true',
+        group: child.dataset.group || ''
+      });
+    } else if (child.classList.contains('group-container')) {
+      const groupName = child.dataset.name;
+      const content = getGroupContent(child);
+      items.push({
+        type: 'group',
+        name: groupName,
+        children: content ? serializeItems(content) : []
+      });
     }
-    groupContainer.querySelector('.group-tasks').appendChild(task);
-  } else {
-    quadrantEl.appendChild(task);
+  });
+  return items;
+}
+
+function getCurrentMatrixData() {
+  const layout = {};
+  ['q1', 'q2', 'q3', 'q4'].forEach(qid => {
+    const q = document.getElementById(qid);
+    if (!q) return;
+
+    const temp = document.createElement('div');
+    Array.from(q.children).forEach(ch => {
+      if (ch.tagName && ch.tagName.toLowerCase() === 'h2') return;
+      temp.appendChild(ch.cloneNode(true));
+    });
+
+    layout[qid] = serializeItems(temp);
+  });
+
+  return {
+    version: FILE_VERSION,
+    timestamp: new Date().toISOString(),
+    groups: { ...groups },
+    layout
+  };
+}
+
+function saveToStorage() {
+  const data = getCurrentMatrixData();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+  if (googleUser && !syncInProgress) {
+    clearTimeout(window.syncTimeout);
+    window.syncTimeout = setTimeout(() => forceSyncToDrive(), 2000);
   }
 }
 
+function clearCurrentData() {
+  document.querySelectorAll('.quadrant').forEach(q => {
+    q.innerHTML = '<h2>' + q.querySelector('h2').textContent + '</h2>';
+  });
+}
+
+function buildItemsInto(containerEl, items, parentGroupName = '') {
+  items.forEach(item => {
+    if (item.type === 'task') {
+      const task = createTaskElement({
+        name: item.name,
+        important: item.important,
+        urgent: item.urgent,
+        group: parentGroupName || ''
+      });
+      containerEl.appendChild(task);
+    } else if (item.type === 'group') {
+      const groupContainer = createGroupContainer(item.name, containerEl, parentGroupName);
+      const content = getGroupContent(groupContainer);
+      buildItemsInto(content, item.children || [], item.name);
+    }
+  });
+}
+
+function loadData(data) {
+  clearCurrentData();
+  groups = data.groups || {};
+
+  rebuildGroupSelects();
+
+  // Backward compatibility: old format with data.tasks
+  if (!data.layout && Array.isArray(data.tasks)) {
+    data.tasks.forEach(t => {
+      const quadrantEl = document.getElementById(t.quadrant);
+      if (!quadrantEl) return;
+      if (t.group && groups[t.group]) {
+        const groupContainer = ensureGroupContainerInScope(quadrantEl, t.group);
+        getGroupContent(groupContainer).appendChild(
+          createTaskElement({ name: t.name, important: t.important, urgent: t.urgent, group: t.group })
+        );
+      } else {
+        quadrantEl.appendChild(createTaskElement({ name: t.name, important: t.important, urgent: t.urgent, group: '' }));
+      }
+    });
+    initGroupContainers();
+    return;
+  }
+
+  // New format with nested layout
+  const layout = data.layout || {};
+  ['q1', 'q2', 'q3', 'q4'].forEach(qid => {
+    const quadrantEl = document.getElementById(qid);
+    if (!quadrantEl) return;
+    buildItemsInto(quadrantEl, layout[qid] || [], '');
+  });
+
+  initGroupContainers();
+}
+
 // ============================================
-// TASK FUNCTIONS - FIXED VERSION
+// TASK FUNCTIONS
 // ============================================
 function openTaskModal(task = null) {
-  console.log('openTaskModal called with:', task);
   editingTask = task;
   document.getElementById('taskModal').style.display = 'flex';
 
@@ -838,111 +1000,66 @@ function closeTaskModal() {
 }
 
 function saveTask() {
-  console.log('saveTask function called');
-  
-  const taskNameEl = document.getElementById('taskName');
-  const importantEl = document.getElementById('important');
-  const urgentEl = document.getElementById('urgent');
-  const taskGroupEl = document.getElementById('taskGroup');
+  const name = document.getElementById('taskName').value.trim();
+  if (!name) return;
 
-  const name = taskNameEl.value.trim();
-  if (!name) {
-    console.log('No task name provided');
-    return;
-  }
+  const isImportant = document.getElementById('important').checked;
+  const isUrgent = document.getElementById('urgent').checked;
+  const groupName = document.getElementById('taskGroup').value;
 
-  const isImportant = importantEl.checked;
-  const isUrgent = urgentEl.checked;
-  const group = taskGroupEl.value;
+  const quadrantId = getQuadrantFromImportantUrgent(isImportant, isUrgent);
+  const quadrantEl = document.getElementById(quadrantId);
 
-  console.log('Task data:', { name, isImportant, isUrgent, group });
+  const taskEl = editingTask || document.createElement('div');
+  taskEl.className = 'task';
+  taskEl.draggable = true;
+  taskEl.dataset.name = name;
+  taskEl.dataset.important = String(isImportant);
+  taskEl.dataset.urgent = String(isUrgent);
 
-  const quadrantId = isImportant && isUrgent ? 'q1' : isImportant ? 'q2' : isUrgent ? 'q3' : 'q4';
-  const quadrant = document.getElementById(quadrantId);
+  // Remove from old parent, then re-place
+  const oldGroupContainer = taskEl.closest('.group-container');
 
-  console.log('Quadrant selected:', quadrantId, quadrant);
-
-  const task = editingTask || document.createElement('div');
-  task.className = 'task';
-  task.draggable = true;
-  task.dataset.name = name;
-  task.dataset.important = isImportant;
-  task.dataset.urgent = isUrgent;
-  task.dataset.group = group;
-
-  task.innerHTML = `
-    <div class="task-left">
-      ${group && groups[group] ? `<span class="group-dot" style="background:${groups[group]}"></span>` : ''}
-      <span>${name}</span>
-    </div>
-    <div class="task-menu">
-      <span class="dots">⋮</span>
-      <div class="menu">
-        <div onclick="openTaskModal(this.closest('.task'))">Edit</div>
-        <div onclick="deleteTask(this.closest('.task'))">Delete</div>
-      </div>
-    </div>`;
-
-  task.querySelector('.dots').onclick = e => {
-    e.stopPropagation();
-    const menu = e.target.nextElementSibling;
-    const isVisible = menu.style.display === 'block';
-    document.querySelectorAll('.menu').forEach(m => m.style.display = 'none');
-    document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
-    menu.style.display = isVisible ? 'none' : 'block';
-  };
-
-  task.addEventListener('dragstart', (e) => {
-    e.stopPropagation();
-    task.classList.add('dragging');
-  });
-  
-  task.addEventListener('dragend', () => {
-    task.classList.remove('dragging');
-    saveToStorage();
-  });
-
-  if (group && groups[group]) {
-    let groupContainer = Array.from(quadrant.querySelectorAll('.group-container'))
-      .find(g => g.dataset.name === group);
+  if (groupName && groups[groupName]) {
+    let groupContainer = quadrantEl.querySelector(`.group-container[data-name="${safeEscapeSelector(groupName)}"]`);
     if (!groupContainer) {
-      console.log('Creating new group container for:', group);
-      groupContainer = createGroupContainer(group, quadrant);
+      groupContainer = createGroupContainer(groupName, quadrantEl, '');
     }
-    console.log('Adding task to group container:', groupContainer);
-    groupContainer.querySelector('.group-tasks').appendChild(task);
+    taskEl.dataset.group = groupName;
+    refreshTaskUI(taskEl);
+    getGroupContent(groupContainer).appendChild(taskEl);
   } else {
-    console.log('Adding task directly to quadrant:', quadrant);
-    quadrant.appendChild(task);
+    taskEl.dataset.group = '';
+    refreshTaskUI(taskEl);
+    quadrantEl.appendChild(taskEl);
   }
+
+  if (oldGroupContainer) cleanupEmptyGroupChain(oldGroupContainer);
 
   saveToStorage();
-  console.log('Task saved successfully');
   closeTaskModal();
 }
 
 function deleteTask(task) {
-  const groupContainer = task.closest('.group-container');
+  const sourceGroup = task.closest('.group-container');
   task.remove();
-  
-  if (groupContainer && groupContainer.querySelectorAll('.task').length === 0) {
-    groupContainer.remove();
-  }
-  
+  if (sourceGroup) cleanupEmptyGroupChain(sourceGroup);
   saveToStorage();
 }
 
 // ============================================
-// GROUP FUNCTIONS - FIXED VERSION
+// GROUP FUNCTIONS
 // ============================================
-function createGroupContainer(groupName, quadrant) {
-  console.log('createGroupContainer called with:', groupName, quadrant);
-  
+function createGroupContainer(groupName, parentContainerEl, parentGroupName = '') {
   const groupContainer = document.createElement('div');
   groupContainer.className = 'group-container';
   groupContainer.dataset.name = groupName;
+  groupContainer.dataset.parent = parentGroupName || '';
+
+  const color = groups[groupName] || '#1976d2';
+
   groupContainer.innerHTML = `
-    <div class="group-header" style="background-color:${groups[groupName]}">
+    <div class="group-header" style="background-color:${color}">
       <div class="group-header-left">
         <span>${groupName}</span>
       </div>
@@ -954,28 +1071,39 @@ function createGroupContainer(groupName, quadrant) {
         </div>
       </div>
     </div>
-    <div class="group-tasks"></div>
+    <div class="group-content"></div>
   `;
-  
-  quadrant.appendChild(groupContainer);
+
+  parentContainerEl.appendChild(groupContainer);
+
   setupGroupContainerDraggable(groupContainer);
   setupGroupMenu(groupContainer);
-  
-  console.log('Group container created:', groupContainer);
+  setupDropTarget(getGroupContent(groupContainer), { type: 'group', groupName });
+
   return groupContainer;
 }
 
 function setupGroupContainerDraggable(groupContainer) {
   groupContainer.draggable = true;
   groupContainer.addEventListener('dragstart', (e) => {
+    // Don't start drag from menus
     if (e.target.classList.contains('group-dots')) {
       e.preventDefault();
       return;
     }
+
+    // DISABLED: dragging nested (child) groups.
+    // Group nesting must be changed only via Edit Group.
+    const hasParentGroup = !!(groupContainer.parentElement && groupContainer.parentElement.closest('.group-container'));
+    if (hasParentGroup) {
+      e.preventDefault();
+      return;
+    }
+
     e.stopPropagation();
     groupContainer.classList.add('dragging');
   });
-  
+
   groupContainer.addEventListener('dragend', () => {
     groupContainer.classList.remove('dragging');
     saveToStorage();
@@ -985,28 +1113,63 @@ function setupGroupContainerDraggable(groupContainer) {
 function setupGroupMenu(groupContainer) {
   const groupDots = groupContainer.querySelector('.group-dots');
   const groupMenu = groupContainer.querySelector('.group-menu-content');
-  
+
   groupDots.addEventListener('click', (e) => {
     e.stopPropagation();
     const isVisible = groupMenu.style.display === 'block';
     document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
+    document.querySelectorAll('.menu').forEach(m => m.style.display = 'none');
     groupMenu.style.display = isVisible ? 'none' : 'block';
   });
 }
 
 function initGroupContainers() {
+  // Reattach group container handlers + make their contents droppable
   document.querySelectorAll('.group-container').forEach(groupContainer => {
     setupGroupContainerDraggable(groupContainer);
     setupGroupMenu(groupContainer);
+    const content = getGroupContent(groupContainer);
+    if (content) {
+      const name = groupContainer.dataset.name;
+      setupDropTarget(content, { type: 'group', groupName: name });
+    }
   });
 }
 
+function rebuildGroupSelects() {
+  const taskSelect = document.getElementById('taskGroup');
+  if (taskSelect) {
+    taskSelect.innerHTML = '<option value="">No Group</option>';
+    Object.keys(groups).forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      taskSelect.appendChild(opt);
+    });
+  }
+
+  const parentSelect = document.getElementById('groupParent');
+  if (parentSelect) {
+    parentSelect.innerHTML = '<option value="">No Parent</option>';
+    Object.keys(groups).forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      parentSelect.appendChild(opt);
+    });
+  }
+}
+
 function openGroupModal() {
-  console.log('openGroupModal called');
   editingGroup = null;
   document.getElementById('groupModalTitle').textContent = 'Add Group';
   document.getElementById('groupName').value = '';
   document.getElementById('groupColor').value = '#1976d2';
+
+  rebuildGroupSelects();
+  const parentSel = document.getElementById('groupParent');
+  if (parentSel) parentSel.value = '';
+
   document.getElementById('saveGroupBtn').textContent = 'Add';
   document.getElementById('groupModal').style.display = 'flex';
 }
@@ -1017,61 +1180,103 @@ function closeGroupModal() {
 }
 
 function saveGroup() {
-  console.log('saveGroup function called');
-  
   const name = document.getElementById('groupName').value.trim();
   const color = document.getElementById('groupColor').value;
-  
-  if (!name) {
-    console.log('No group name provided');
+  const parentName = (document.getElementById('groupParent')?.value || '').trim();
+
+  if (!name) return;
+
+  if (parentName && parentName === name) {
+    alert('A group cannot be a parent of itself.');
     return;
   }
 
-  console.log('Saving group:', { name, color });
-
   if (editingGroup) {
     const oldName = editingGroup;
-    
-    document.querySelectorAll(`.group-container[data-name="${oldName}"]`).forEach(container => {
+    const oldSafe = safeEscapeSelector(oldName);
+
+    const containers = Array.from(document.querySelectorAll(`.group-container[data-name="${oldSafe}"]`));
+
+    containers.forEach(container => {
       container.dataset.name = name;
       const header = container.querySelector('.group-header');
-      header.style.backgroundColor = color;
-      header.querySelector('.group-header-left span').textContent = name;
-      
+      if (header) {
+        header.style.backgroundColor = color;
+        const label = header.querySelector('.group-header-left span');
+        if (label) label.textContent = name;
+      }
+
       const editBtn = container.querySelector('.group-menu-content div:first-child');
       const deleteBtn = container.querySelector('.group-menu-content div:last-child');
-      editBtn.setAttribute('onclick', `openEditGroupModal('${name}')`);
-      deleteBtn.setAttribute('onclick', `openDeleteGroupModal('${name}')`);
+      if (editBtn) editBtn.setAttribute('onclick', `openEditGroupModal('${name}')`);
+      if (deleteBtn) deleteBtn.setAttribute('onclick', `openDeleteGroupModal('${name}')`);
     });
-    
-    document.querySelectorAll(`.task[data-group="${oldName}"]`).forEach(task => {
+
+    document.querySelectorAll(`.task[data-group="${oldSafe}"]`).forEach(task => {
       task.dataset.group = name;
-      const groupDot = task.querySelector('.group-dot');
-      if (groupDot) {
-        groupDot.style.background = color;
-      }
+      refreshTaskUI(task);
     });
-    
-    const oldOption = document.querySelector(`#taskGroup option[value="${oldName}"]`);
-    if (oldOption) {
-      oldOption.value = name;
-      oldOption.textContent = name;
-    }
-    
+
+    document.querySelectorAll(`.group-container[data-parent="${oldSafe}"]`).forEach(gc => {
+      gc.dataset.parent = name;
+    });
+
     delete groups[oldName];
     groups[name] = color;
+
+    rebuildGroupSelects();
+
+    containers.forEach(container => {
+      let desiredParent = parentName;
+      if (desiredParent && desiredParent === oldName) desiredParent = name;
+
+      const quadrant = container.closest('.quadrant');
+      if (!quadrant) return;
+
+      if (desiredParent && groups[desiredParent]) {
+        const parentSafe = safeEscapeSelector(desiredParent);
+        let parentContainer = quadrant.querySelector(`.group-container[data-name="${parentSafe}"]`);
+        if (!parentContainer) {
+          parentContainer = createGroupContainer(desiredParent, quadrant, '');
+        }
+
+        if (isInside(parentContainer, container)) {
+          return;
+        }
+
+        container.dataset.parent = desiredParent;
+        getGroupContent(parentContainer).appendChild(container);
+      } else {
+        container.dataset.parent = '';
+        quadrant.appendChild(container);
+      }
+    });
+
+    editingGroup = name;
   } else {
     groups[name] = color;
-    
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    document.getElementById('taskGroup').appendChild(opt);
-    console.log('Group added to dropdown:', name);
+    rebuildGroupSelects();
+
+    if (parentName && groups[parentName]) {
+      const parentSafe = safeEscapeSelector(parentName);
+
+      let parentContainer = document.querySelector(`.group-container[data-name="${parentSafe}"]`);
+
+      if (!parentContainer) {
+        const q2 = document.getElementById('q2');
+        if (q2) {
+          parentContainer = createGroupContainer(parentName, q2, '');
+        }
+      }
+
+      if (parentContainer) {
+        const parentContent = getGroupContent(parentContainer);
+        createGroupContainer(name, parentContent, parentName);
+      }
+    }
   }
 
   saveToStorage();
-  console.log('Group saved successfully');
   closeGroupModal();
 }
 
@@ -1079,10 +1284,23 @@ function openEditGroupModal(groupName) {
   editingGroup = groupName;
   document.getElementById('groupModalTitle').textContent = 'Edit Group';
   document.getElementById('groupName').value = groupName;
-  document.getElementById('groupColor').value = groups[groupName];
+  document.getElementById('groupColor').value = groups[groupName] || '#1976d2';
+
+  rebuildGroupSelects();
+  const safe = safeEscapeSelector(groupName);
+  const firstInstance = document.querySelector(`.group-container[data-name="${safe}"]`);
+  const currentParent = firstInstance ? (firstInstance.dataset.parent || '') : '';
+
+  const parentSelect = document.getElementById('groupParent');
+  if (parentSelect) {
+    Array.from(parentSelect.options).forEach(opt => {
+      if (opt.value === groupName) opt.remove();
+    });
+    parentSelect.value = currentParent;
+  }
+
   document.getElementById('saveGroupBtn').textContent = 'Save Changes';
   document.getElementById('groupModal').style.display = 'flex';
-  
   document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
 }
 
@@ -1090,7 +1308,6 @@ function openDeleteGroupModal(groupName) {
   deletingGroup = groupName;
   document.getElementById('deleteGroupName').textContent = groupName;
   document.getElementById('deleteGroupModal').style.display = 'flex';
-  
   document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
 }
 
@@ -1101,105 +1318,175 @@ function closeDeleteGroupModal() {
 
 function confirmDeleteGroup() {
   if (!deletingGroup) return;
-  
+
   const deleteOption = document.querySelector('input[name="deleteOption"]:checked').value;
   const groupName = deletingGroup;
-  
-  document.querySelectorAll(`.group-container[data-name="${groupName}"]`).forEach(groupContainer => {
+  const safe = safeEscapeSelector(groupName);
+
+  document.querySelectorAll(`.group-container[data-name="${safe}"]`).forEach(groupContainer => {
+    const parentContent = groupContainer.parentElement;
+    const parentGroupContainer = parentContent.closest('.group-container');
+    const parentGroupName = parentGroupContainer ? parentGroupContainer.dataset.name : '';
+
+    const content = getGroupContent(groupContainer);
+
     if (deleteOption === 'deleteTasks') {
-      groupContainer.querySelectorAll('.task').forEach(task => task.remove());
-    } else {
-      const tasks = groupContainer.querySelectorAll('.task');
-      const quadrant = groupContainer.closest('.quadrant');
-      
-      tasks.forEach(task => {
-        task.dataset.group = '';
-        const groupDot = task.querySelector('.group-dot');
-        if (groupDot) {
-          groupDot.remove();
+      groupContainer.remove();
+      if (parentGroupContainer) cleanupEmptyGroupChain(parentGroupContainer);
+      return;
+    }
+
+    if (content) {
+      Array.from(content.children).forEach(child => {
+        if (child.classList.contains('task')) {
+          child.dataset.group = parentGroupName || '';
+          refreshTaskUI(child);
+        } else if (child.classList.contains('group-container')) {
+          child.dataset.parent = parentGroupName || '';
         }
-        quadrant.appendChild(task);
+        parentContent.appendChild(child);
       });
     }
-    
+
     groupContainer.remove();
+    if (parentGroupContainer) cleanupEmptyGroupChain(parentGroupContainer);
   });
-  
+
   delete groups[groupName];
-  
-  const groupOption = document.querySelector(`#taskGroup option[value="${groupName}"]`);
-  if (groupOption) {
-    groupOption.remove();
-  }
-  
+
+  const groupOption = document.querySelector(`#taskGroup option[value="${safe}"]`);
+  if (groupOption) groupOption.remove();
+
+  const parentOption = document.querySelector(`#groupParent option[value="${safe}"]`);
+  if (parentOption) parentOption.remove();
+
   saveToStorage();
   closeDeleteGroupModal();
 }
 
 // ============================================
 // DRAG AND DROP
+// Rules you asked for:
+//  - Dragging must NOT change group membership.
+//  - Tasks cannot be dropped into groups.
+//  - Groups cannot be dropped into groups (nesting only via Edit Group).
+//  - Child groups cannot be dragged.
 // ============================================
-document.querySelectorAll('.quadrant').forEach(q => {
-  q.addEventListener('dragover', e => e.preventDefault());
-  q.addEventListener('drop', e => {
+
+function mergeGroupContents(fromGroupContainer, intoGroupContainer) {
+  const fromContent = getGroupContent(fromGroupContainer);
+  const intoContent = getGroupContent(intoGroupContainer);
+  if (!fromContent || !intoContent) return;
+
+  Array.from(fromContent.children).forEach(child => intoContent.appendChild(child));
+}
+
+function setupDropTarget(targetEl, targetInfo) {
+  targetEl.addEventListener('dragover', (e) => e.preventDefault());
+
+  targetEl.addEventListener('drop', (e) => {
     e.preventDefault();
-    const draggedElement = document.querySelector('.dragging');
-    if (!draggedElement) return;
-    
-    const targetQuadrant = e.currentTarget;
-    
-    if (draggedElement.classList.contains('group-container')) {
-      draggedElement.classList.remove('dragging');
-      const groupName = draggedElement.dataset.name;
-      
-      const existingGroupContainer = Array.from(targetQuadrant.querySelectorAll('.group-container'))
-        .find(g => g.dataset.name === groupName);
-      
-      if (existingGroupContainer && existingGroupContainer !== draggedElement) {
-        const draggedTasks = draggedElement.querySelectorAll('.task');
-        const existingTasksContainer = existingGroupContainer.querySelector('.group-tasks');
-        
-        Array.from(draggedTasks).forEach(t => {
-          existingTasksContainer.appendChild(t);
-        });
-        
-        draggedElement.remove();
-      } else if (existingGroupContainer !== draggedElement) {
-        targetQuadrant.appendChild(draggedElement);
-      }
-    } else if (draggedElement.classList.contains('task')) {
-      draggedElement.classList.remove('dragging');
-      const group = draggedElement.dataset.group;
-      const sourceGroupContainer = draggedElement.closest('.group-container');
-      
-      if (group && sourceGroupContainer) {
-        const groupName = sourceGroupContainer.dataset.name;
-        const existingGroupContainer = Array.from(targetQuadrant.querySelectorAll('.group-container'))
-          .find(g => g.dataset.name === groupName);
-        
-        if (existingGroupContainer) {
-          existingGroupContainer.querySelector('.group-tasks').appendChild(draggedElement);
-        } else {
-          createGroupContainer(groupName, targetQuadrant);
-          targetQuadrant.querySelector(`.group-container[data-name="${groupName}"] .group-tasks`)
-            .appendChild(draggedElement);
-        }
-        
-        if (sourceGroupContainer && (!existingGroupContainer || sourceGroupContainer !== existingGroupContainer)) {
-          if (sourceGroupContainer.querySelectorAll('.task').length === 0) {
-            sourceGroupContainer.remove();
-          }
-        }
-      } else {
-        targetQuadrant.appendChild(draggedElement);
-      }
-    }
-    
+
+    const dragged = document.querySelector('.dragging');
+    if (!dragged) return;
+
+    // Close menus
     document.querySelectorAll('.menu').forEach(m => m.style.display = 'none');
     document.querySelectorAll('.group-menu-content').forEach(m => m.style.display = 'none');
-    
-    saveToStorage();
+
+    const targetContainer = targetEl;
+
+    // ---- GROUP DROP ----
+    if (dragged.classList.contains('group-container')) {
+      dragged.classList.remove('dragging');
+
+      // No dropping groups into groups.
+      if (targetInfo.type === 'group') {
+        return;
+      }
+
+      const quadrantEl = targetContainer;
+      const groupName = dragged.dataset.name;
+
+      // Membership must NOT change by dragging.
+      // Keep its parent chain (if any) and place it under the same parent in the target quadrant.
+      const chain = getGroupChainByName(groupName); // outer -> ... -> groupName
+      const parentChain = chain.slice(0, -1);       // outer -> ... -> parent
+      const parentName = parentChain.length ? parentChain[parentChain.length - 1] : '';
+
+      let destinationParentEl = quadrantEl; // quadrant root by default
+
+      if (parentChain.length) {
+        const parentContainer = ensureGroupChainInQuadrant(quadrantEl, parentChain);
+        if (parentContainer) {
+          destinationParentEl = getGroupContent(parentContainer);
+        }
+      }
+
+      // Ensure dragged keeps its parent value
+      dragged.dataset.parent = parentName;
+
+      // If same group already exists in destination, merge (avoid duplicates)
+      const safe = safeEscapeSelector(groupName);
+      const existing = destinationParentEl.querySelector(`:scope > .group-container[data-name="${safe}"]`);
+      if (existing && existing !== dragged) {
+        mergeGroupContents(dragged, existing);
+        dragged.remove();
+        saveToStorage();
+        return;
+      }
+
+      destinationParentEl.appendChild(dragged);
+      saveToStorage();
+      return;
+    }
+
+    // ---- TASK DROP ----
+    if (dragged.classList.contains('task')) {
+      const sourceGroup = dragged.closest('.group-container');
+      dragged.classList.remove('dragging');
+
+      // No dropping tasks into groups.
+      if (targetInfo.type === 'group') {
+        return;
+      }
+
+      const quadrantEl = targetContainer;
+
+      // If task is inside a group chain, preserve the chain in the new quadrant
+      if (sourceGroup) {
+        const chain = getGroupChainFromElement(dragged);
+        const innermost = ensureGroupChainInQuadrant(quadrantEl, chain);
+
+        if (innermost) {
+          // Keep task's direct group membership
+          dragged.dataset.group = chain[chain.length - 1] || dragged.dataset.group || '';
+          refreshTaskUI(dragged);
+          getGroupContent(innermost).appendChild(dragged);
+        } else {
+          // Fallback: move without changing membership
+          refreshTaskUI(dragged);
+          quadrantEl.appendChild(dragged);
+        }
+
+        // Remove empty shells in the source quadrant
+        cleanupEmptyGroupChain(sourceGroup);
+      } else {
+        // Ungrouped task moves freely
+        dragged.dataset.group = '';
+        refreshTaskUI(dragged);
+        quadrantEl.appendChild(dragged);
+      }
+
+      saveToStorage();
+      return;
+    }
   });
+}
+
+// Make quadrants droppable targets
+document.querySelectorAll('.quadrant').forEach(q => {
+  setupDropTarget(q, { type: 'quadrant', quadrantId: q.id });
 });
 
 // ============================================
@@ -1223,7 +1510,7 @@ function updateSyncStatus(status) {
   const el = document.getElementById('syncStatus');
   el.textContent = status;
   el.className = 'sync-status';
-  
+
   if (status.includes('Syncing') || status.includes('Loading')) {
     el.classList.add('syncing');
   } else if (status.includes('Synced') || status.includes('Loaded') || status === 'Online') {
@@ -1238,15 +1525,15 @@ function formatTime(date) {
   const now = new Date();
   const diff = now - date;
   const minutes = Math.floor(diff / 60000);
-  
+
   if (minutes < 1) return 'just now';
   if (minutes === 1) return '1 min ago';
   if (minutes < 60) return `${minutes} mins ago`;
-  
+
   const hours = Math.floor(minutes / 60);
   if (hours === 1) return '1 hour ago';
   if (hours < 24) return `${hours} hours ago`;
-  
+
   const days = Math.floor(hours / 24);
   if (days === 1) return 'yesterday';
   return `${days} days ago`;
@@ -1257,51 +1544,66 @@ function clearAllData() {
     localStorage.removeItem(STORAGE_KEY);
     clearCurrentData();
     groups = {};
-    document.getElementById('taskGroup').innerHTML = '<option value="">No Group</option>';
+
+    const taskSel = document.getElementById('taskGroup');
+    if (taskSel) taskSel.innerHTML = '<option value="">No Group</option>';
+
+    const parentSel = document.getElementById('groupParent');
+    if (parentSel) parentSel.innerHTML = '<option value="">No Parent</option>';
   }
 }
 
 // ============================================
-// STARTUP - FIXED VERSION
+// SELF-TESTS (lightweight)
+// ============================================
+function assert(condition, message) {
+  if (!condition) throw new Error('Test failed: ' + message);
+}
+
+function runSelfTests() {
+  // Test 1: safeEscapeSelector escapes special chars
+  const escaped = safeEscapeSelector('A B');
+  assert(typeof escaped === 'string' && escaped.length > 0, 'safeEscapeSelector returns string');
+
+  // Test 2: getQuadrantFromImportantUrgent mapping
+  assert(getQuadrantFromImportantUrgent(true, true) === 'q1', 'Quadrant q1');
+  assert(getQuadrantFromImportantUrgent(true, false) === 'q2', 'Quadrant q2');
+  assert(getQuadrantFromImportantUrgent(false, true) === 'q3', 'Quadrant q3');
+  assert(getQuadrantFromImportantUrgent(false, false) === 'q4', 'Quadrant q4');
+
+  console.log('Self-tests passed');
+}
+
+// ============================================
+// STARTUP
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM fully loaded and parsed');
-  
-  // Initialize Google Auth
   initGoogleAuth();
-  
+
   // Load from localStorage
   const savedData = localStorage.getItem(STORAGE_KEY);
   if (savedData) {
     try {
-      console.log('Loading saved data from localStorage');
       const data = JSON.parse(savedData);
       loadData(data);
-      console.log('Data loaded successfully');
     } catch (e) {
       console.error('Error loading saved data:', e);
     }
-  } else {
-    console.log('No saved data found in localStorage');
   }
-  
+
   // Check last sync time
   const lastSync = localStorage.getItem('lastSyncTime');
   if (lastSync) {
     lastSyncTime = new Date(lastSync);
     updateSyncStatus(`Last sync: ${formatTime(lastSyncTime)}`);
   }
-  
-  // Test: Add console log to verify functions are available
-  console.log('openTaskModal available:', typeof openTaskModal);
-  console.log('saveTask available:', typeof saveTask);
-  console.log('openGroupModal available:', typeof openGroupModal);
-  console.log('saveGroup available:', typeof saveGroup);
-  
-  // Add event listener test
-  document.querySelectorAll('.add-btn').forEach(btn => {
-    console.log('Add button found:', btn);
-  });
+
+  // Tests
+  try {
+    runSelfTests();
+  } catch (err) {
+    console.error(err);
+  }
 });
 </script>
 </body>
